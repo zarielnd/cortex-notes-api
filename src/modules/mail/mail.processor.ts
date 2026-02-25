@@ -1,4 +1,4 @@
-import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import {
   PasswordChangedEmailJobDto,
   ResetPasswordEmailJobDto,
@@ -22,7 +22,10 @@ type MailJobData =
 @Processor(MAIL_QUEUE)
 export class MailProcessor extends WorkerHost {
   private readonly logger = new Logger(MailProcessor.name);
-
+  @OnWorkerEvent('failed')
+  onFailed(job: Job, err: Error) {
+    console.log('Job failed:', err.message);
+  }
   constructor(private readonly mailService: MailerService) {
     super();
   }
@@ -56,7 +59,7 @@ export class MailProcessor extends WorkerHost {
       subject: 'Welcome to Our Service!',
       template: 'welcome-email',
       context: {
-        name: data.firstName,
+        firstName: data.firstName,
         temporaryPassword: data.tempPassword,
         loginUrl: process.env.APP_URL + '/auth/login',
       },
@@ -71,7 +74,7 @@ export class MailProcessor extends WorkerHost {
       subject: 'Password Reset Request',
       template: 'reset-password-email',
       context: {
-        name: data.firstName,
+        firstName: data.firstName,
         resetLink: data.resetLink,
         expiresInMinutes: data.expiresInMinutes,
       },

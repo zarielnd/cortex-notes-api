@@ -1,19 +1,16 @@
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
-
 dotenv.config();
 
 export default new DataSource({
-  type: 'mssql',
+  type: 'postgres',
   host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT ?? '1433', 10),
+  port: parseInt(process.env.DB_PORT ?? '5432', 10),
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
-  options: {
-    encrypt: process.env.DB_ENCRYPT === 'true',
-    trustServerCertificate: true,
-  },
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  synchronize: false,
   entities: ['src/**/*.entity.ts'],
-  migrations: ['src/database/migrations/*.ts'],
+  migrations: ['src/infrastructure/database/migrations/*.ts'],
 });

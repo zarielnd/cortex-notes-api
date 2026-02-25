@@ -3,19 +3,20 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RefreshToken } from '../../entities/refresh-token.entity';
-import { UsersModule } from '../users/users.module';
 import { JwtModule } from '@nestjs/jwt';
-import { RedisModule } from 'src/infrastructure/redis/redis.module';
-import { QueueModule } from 'src/infrastructure/queue/queue.module';
+import { MailModule } from '../mail/mail.module';
+import { ConfigModule } from '@nestjs/config';
+import { PassportModule } from '@nestjs/passport';
+import { User } from 'src/entities/user.entity';
+import { RefreshToken } from 'src/entities/refresh-token.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RefreshToken]),
-    UsersModule,
-    JwtModule.register({}),
-    RedisModule,
-    QueueModule,
+    TypeOrmModule.forFeature([User, RefreshToken]),
+    PassportModule,
+    JwtModule.register({}), // Configured dynamically in service
+    ConfigModule,
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

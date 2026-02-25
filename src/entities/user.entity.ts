@@ -40,7 +40,7 @@ export class User {
   avatarUrl: string;
 
   @Column({
-    type: 'nvarchar',
+    type: 'varchar',
     default: UserStatus.ACTIVE,
     length: 20,
   })
@@ -48,22 +48,22 @@ export class User {
 
   @Column({ default: false })
   isEmailVerified: boolean;
-  @Column({ nullable: true, type: 'nvarchar', length: 500, select: false })
+  @Column({ nullable: true, type: 'varchar', length: 500, select: false })
   refreshTokenHash: string;
 
-  @Column({ nullable: true, type: 'nvarchar', length: 500, select: false })
+  @Column({ nullable: true, type: 'varchar', length: 500, select: false })
   resetPasswordToken: string;
 
-  @Column({ nullable: true, type: 'datetime2', select: false })
+  @Column({ nullable: true, type: 'timestamp', select: false })
   resetPasswordExpires: Date;
 
-  @Column({ nullable: true, type: 'datetime2' })
+  @Column({ nullable: true, type: 'timestamp' })
   lastLoginAt: Date;
 
   @Column({ default: 0 })
   failedLoginAttempts: number;
 
-  @Column({ nullable: true, type: 'datetime2' })
+  @Column({ nullable: true, type: 'timestamp' })
   lockedUntil: Date;
 
   @ManyToMany(() => Role, (role) => role.users, { eager: true })

@@ -9,14 +9,15 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 
+@Entity('refresh_tokens')
 export class RefreshToken {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'nvarchar', length: 500 })
+  @Column({ type: 'varchar', length: 500 })
   tokenHash: string;
 
-  @Column({ type: 'nvarchar', length: 255 })
+  @Column({ type: 'varchar', length: 255 })
   @Index()
   jti: string; // JWT ID — unique per token
 
@@ -27,13 +28,13 @@ export class RefreshToken {
   @Column({ name: 'user_id' })
   userId: string;
 
-  @Column({ type: 'nvarchar', length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   userAgent: string;
 
-  @Column({ type: 'nvarchar', length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   ipAddress: string;
 
-  @Column({ type: 'datetime2' })
+  @Column({ type: 'timestamp' })
   expiresAt: Date;
 
   @Column({ default: false })

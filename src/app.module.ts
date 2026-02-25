@@ -3,9 +3,77 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-
+import { RolesModule } from './modules/roles/roles.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
+import { CaslModule } from './infrastructure/casl/casl.module';
+import { MailModule } from './modules/mail/mail.module';
+import { DatabaseModule } from './infrastructure/database/database.module';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { BullModule } from '@nestjs/bullmq';
+import { CacheModule } from '@nestjs/cache-manager';
+import appConfig from './config/app.config';
+import databaseConfig from './config/database.config';
+import redisConfig from './config/redis.config';
+import jwtConfig from './config/jwt.config';
+import mailConfig from './config/mail.config';
+import awsConfig from './config/aws.config';
+import { configValidationSchema } from './config/config.validation';
+import { createKeyv } from '@keyv/redis';
+console.log(__dirname);
 @Module({
-  imports: [AuthModule, UsersModule],
+  imports: [
+    // Config
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [
+        appConfig,
+        databaseConfig,
+        redisConfig,
+        jwtConfig,
+        mailConfig,
+        awsConfig,
+      ],
+      validationSchema: configValidationSchema,
+      envFilePath: '.env',
+    }),
+
+    // Cache with Redis
+    CacheModule.registerAsync({
+      isGlobal: true,
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        stores: [
+          createKeyv(
+            `redis://${configService.get<string>('redis.password') ? `:${configService.get<string>('redis.password')}@` : ''}${configService.get<string>('redis.host')}:${configService.get<number>('redis.port')}`,
+          ),
+        ],
+        ttl: configService.get<number>('redis.ttl'),
+      }),
+    }),
+
+    // BullMQ
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('redis.host'),
+          port: configService.get<number>('redis.port'),
+          password: configService.get<string>('redis.password') || undefined,
+        },
+      }),
+    }),
+
+    // Feature modules
+    DatabaseModule,
+    MailModule,
+    CaslModule,
+    AuthModule,
+    UsersModule,
+    RolesModule,
+    PermissionsModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

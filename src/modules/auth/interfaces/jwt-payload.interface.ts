@@ -1,5 +1,6 @@
 export interface JwtPayload {
   sub: string;
   email: string;
-  tokenVersion: number;
+  jti: string;
+  type: 'access' | 'refresh';
 }

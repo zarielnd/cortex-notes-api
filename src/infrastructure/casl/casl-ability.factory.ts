@@ -7,7 +7,7 @@ import {
 import { Action } from './actions.enum';
 import { User } from 'src/entities/user.entity';
 import { Injectable } from '@nestjs/common';
-import { Subjects } from './casl.types';
+import { Subjects } from './types/casl.types';
 
 export type AppAbility = MongoAbility<[Action, Subjects]>;
 
@@ -25,7 +25,7 @@ export class CaslAbilityFactory {
     } else {
       for (const permission of allPermissions) {
         const action = permission.action as Action;
-        const subject = permission.subject as Subjects;
+        const subject = permission.subject as ExtractSubjectType<Subjects>;
         can(action, subject);
       }
     }
@@ -33,9 +33,6 @@ export class CaslAbilityFactory {
       cannot(Action.Manage, 'all');
     }
 
-    return build({
-      detectSubjectType: (item) =>
-        item.constructor as ExtractSubjectType<Subjects>,
-    });
+    return build();
   }
 }
