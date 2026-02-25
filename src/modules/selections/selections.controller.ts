@@ -1,7 +1,108 @@
-import { Controller } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  ParseUUIDPipe,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { SelectionsService } from './selections.service';
+import { CreateSelectionDto } from './dto/create-selection.dto';
+import { UpdateSelectionDto } from './dto/update-selection.dto';
+import { AddMemberDto } from './dto/add-member.dto';
+import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { User } from 'src/entities/user.entity';
+import { Selection } from 'src/entities/selection.entity';
+import { SelectionMember } from 'src/entities/selection-member.entity';
 
 @Controller('selections')
+@UseGuards(JwtAuthGuard)
 export class SelectionsController {
   constructor(private readonly selectionsService: SelectionsService) {}
+
+  @Get()
+  findAll(@CurrentUser() user: User): Promise<Selection[]> {
+    return this.selectionsService.findAll(user);
+  }
+
+  @Get(':id')
+  findOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: User,
+  ): Promise<Selection> {
+    return this.selectionsService.findOne(id, user);
+  }
+
+  @Post()
+  create(
+    @Body() dto: CreateSelectionDto,
+    @CurrentUser() user: User,
+  ): Promise<Selection> {
+    return this.selectionsService.create(dto, user);
+  }
+
+  @Put(':id')
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateSelectionDto,
+    @CurrentUser() user: User,
+  ): Promise<Selection> {
+    return this.selectionsService.update(id, dto, user);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: User,
+  ): Promise<{ message: string }> {
+    return this.selectionsService.remove(id, user);
+  }
+
+  // ─── Member endpoints ──────────────────────────────────────────────────────
+
+  @Get(':id/members')
+  getMembers(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: User,
+  ): Promise<SelectionMember[]> {
+    return this.selectionsService.getMembers(id, user);
+  }
+
+  @Post(':id/members')
+  addMember(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: AddMemberDto,
+    @CurrentUser() user: User,
+  ): Promise<SelectionMember> {
+    return this.selectionsService.addMember(id, dto, user);
+  }
+
+  @Patch(':id/members/:memberId/role')
+  updateMemberRole(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('memberId', ParseUUIDPipe) memberId: string,
+    @Body() dto: UpdateMemberRoleDto,
+    @CurrentUser() user: User,
+  ): Promise<SelectionMember> {
+    return this.selectionsService.updateMemberRole(id, memberId, dto, user);
+  }
+
+  @Delete(':id/members/:memberId')
+  @HttpCode(HttpStatus.OK)
+  removeMember(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('memberId', ParseUUIDPipe) memberId: string,
+    @CurrentUser() user: User,
+  ): Promise<{ message: string }> {
+    return this.selectionsService.removeMember(id, memberId, user);
+  }
 }

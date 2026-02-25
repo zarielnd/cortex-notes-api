@@ -9,7 +9,7 @@ import {
   Unique,
 } from 'typeorm';
 import { Selection } from './selection.entity';
-import { SelectionMemberRole } from 'src/modules/selections/enum/selection-member-role.enum';
+import { SelectionMemberRole } from 'src/modules/selections/enums/selection-member-role.enum';
 import { User } from './user.entity';
 
 @Entity('selection_members')
