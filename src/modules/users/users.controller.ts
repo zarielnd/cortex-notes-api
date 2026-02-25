@@ -1,27 +1,28 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Patch,
-  Delete,
   Body,
-  Param,
-  ParseUUIDPipe,
-  UseGuards,
+  Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Put,
+  UseGuards,
 } from '@nestjs/common';
-import { UsersService } from './users.service';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { User } from 'src/entities/user.entity';
+import { Action } from 'src/infrastructure/casl/actions.enum';
+import { AppAbility } from 'src/infrastructure/casl/casl-ability.factory';
+import { CheckPolicies } from '../../common/decorators/check-policies.decorator';
+import { CaslGuard } from '../../common/guards/casl.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AssignRolesDto } from './dto/assign-role.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { CaslGuard } from '../../common/guards/casl.guard';
-import { CheckPolicies } from '../../common/decorators/check-policies.decorator';
-import { AppAbility } from 'src/infrastructure/casl/casl-ability.factory';
-import { Action } from 'src/infrastructure/casl/actions.enum';
-import { User } from 'src/entities/user.entity';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { UsersService } from './users.service';
 
 @ApiBearerAuth()
 @Controller('users')
@@ -78,9 +79,9 @@ export class UsersController {
   @CheckPolicies((ability: AppAbility) => ability.can(Action.Update, User))
   assignRoles(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: { roleIds: string[] },
+    @Body() dto: AssignRolesDto,
   ): Promise<User> {
-    return this.usersService.assignRoles(id, body.roleIds);
+    return this.usersService.assignRoles(id, dto.roleIds);
   }
 
   @Delete(':id')

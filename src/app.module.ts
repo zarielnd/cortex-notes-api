@@ -23,6 +23,12 @@ import { SelectionsModule } from './modules/selections/selections.module';
 import { StorageService } from './modules/storage/storage.service';
 import { StorageModule } from './modules/storage/storage.module';
 import { NotesModule } from './modules/notes/notes.module';
+import { AttachmentsService } from './modules/attachments/attachments.service';
+import { AttachmentsModule } from './modules/attachments/attachments.module';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 console.log(__dirname);
 @Module({
   imports: [
@@ -80,8 +86,12 @@ console.log(__dirname);
     SelectionsModule,
     StorageModule,
     NotesModule,
+    AttachmentsModule,
   ],
-  controllers: [AppController],
-  providers: [AppService, StorageService],
+  providers: [
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
+  ],
 })
 export class AppModule {}

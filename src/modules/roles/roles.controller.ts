@@ -1,22 +1,24 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
   Body,
-  Param,
-  ParseUUIDPipe,
-  UseGuards,
+  Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Put,
+  UseGuards,
 } from '@nestjs/common';
-import { RolesService } from './roles.service';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { Role } from 'src/entities/role.entity';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { Role } from 'src/entities/role.entity';
+import { RolesService } from './roles.service';
 
+@ApiBearerAuth()
 @Controller('roles')
 @UseGuards(JwtAuthGuard)
 export class RolesController {

@@ -1,28 +1,30 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Patch,
-  Delete,
   Body,
-  Param,
-  ParseUUIDPipe,
-  UseGuards,
+  Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Put,
+  UseGuards,
 } from '@nestjs/common';
-import { SelectionsService } from './selections.service';
-import { CreateSelectionDto } from './dto/create-selection.dto';
-import { UpdateSelectionDto } from './dto/update-selection.dto';
-import { AddMemberDto } from './dto/add-member.dto';
-import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { User } from 'src/entities/user.entity';
-import { Selection } from 'src/entities/selection.entity';
+import { ApiBearerAuth } from '@nestjs/swagger';
 import { SelectionMember } from 'src/entities/selection-member.entity';
+import { Selection } from 'src/entities/selection.entity';
+import { User } from 'src/entities/user.entity';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { AddMemberDto } from './dto/add-member.dto';
+import { CreateSelectionDto } from './dto/create-selection.dto';
+import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
+import { UpdateSelectionDto } from './dto/update-selection.dto';
+import { SelectionsService } from './selections.service';
 
+@ApiBearerAuth()
 @Controller('selections')
 @UseGuards(JwtAuthGuard)
 export class SelectionsController {
