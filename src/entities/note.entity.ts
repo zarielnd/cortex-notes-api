@@ -22,7 +22,7 @@ export class Note {
   @Column({ length: 500 })
   title: string;
 
-  @Column({ type: 'nvarchar', length: 'max', nullable: true })
+  @Column({ type: 'text', nullable: true })
   content: string;
 
   @Column({ name: 'selection_id' })

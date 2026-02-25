@@ -22,6 +22,7 @@ import { createKeyv } from '@keyv/redis';
 import { SelectionsModule } from './modules/selections/selections.module';
 import { StorageService } from './modules/storage/storage.service';
 import { StorageModule } from './modules/storage/storage.module';
+import { NotesModule } from './modules/notes/notes.module';
 console.log(__dirname);
 @Module({
   imports: [
@@ -78,6 +79,7 @@ console.log(__dirname);
     PermissionsModule,
     SelectionsModule,
     StorageModule,
+    NotesModule,
   ],
   controllers: [AppController],
   providers: [AppService, StorageService],

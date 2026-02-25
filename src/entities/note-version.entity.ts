@@ -23,13 +23,13 @@ export class NoteVersion {
   @Column({ length: 500 })
   title: string;
 
-  @Column({ type: 'nvarchar', length: 'max', nullable: true })
+  @Column({ type: 'text', nullable: true })
   content: string;
 
   @Column({ type: 'int' })
   versionNumber: number;
 
-  @Column({ type: 'nvarchar', length: 500, nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   changeSummary: string;
 
   @ManyToOne(() => Note, (note) => note.versions, {

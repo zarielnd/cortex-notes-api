@@ -21,7 +21,7 @@ export class Selection {
   @Column({ length: 255 })
   name: string;
 
-  @Column({ nullable: true, type: 'nvarchar', length: 1000 })
+  @Column({ nullable: true, type: 'varchar', length: 1000 })
   description: string;
 
   @Column({ name: 'created_by' })

@@ -25,7 +25,7 @@ export class SelectionMember {
   userId: string;
 
   @Column({
-    type: 'nvarchar',
+    type: 'varchar',
     length: 20,
     default: SelectionMemberRole.VIEWER,
   })

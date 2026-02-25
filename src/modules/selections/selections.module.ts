@@ -5,6 +5,7 @@ import { MailModule } from '../mail/mail.module';
 import { User } from 'src/entities/user.entity';
 import { SelectionMember } from 'src/entities/selection-member.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Selection } from 'src/entities/selection.entity';
 
 @Module({
   imports: [

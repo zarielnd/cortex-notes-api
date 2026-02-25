@@ -34,17 +34,17 @@ export class Attachment {
   @Column({ length: 255 })
   mimeType: string;
 
-  @Column({ type: 'nvarchar', length: 'max' })
+  @Column({ type: 'text' })
   s3Key: string;
 
-  @Column({ type: 'nvarchar', length: 'max' })
+  @Column({ type: 'text' })
   s3Url: string;
 
   @Column({ type: 'bigint' })
   sizeBytes: number;
 
   @Column({
-    type: 'nvarchar',
+    type: 'varchar',
     length: 20,
     default: AttachmentType.FILE,
   })
