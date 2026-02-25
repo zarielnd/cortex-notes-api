@@ -15,3 +15,11 @@ export interface PasswordChangedEmailJobDto {
   to: string;
   firstName: string;
 }
+export interface SelectionInviteEmailJobDto {
+  to: string;
+  firstName: string;
+  inviterName: string;
+  selectionId: string;
+  selectionName: string;
+  role: string;
+}

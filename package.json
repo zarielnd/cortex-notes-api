@@ -25,6 +25,8 @@
     "seed": "ts-node -r tsconfig-paths/register src/infrastructure/database/seeds/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.997.0",
+    "@aws-sdk/s3-request-presigner": "^3.997.0",
     "@casl/ability": "^6.8.0",
     "@keyv/redis": "^5.1.6",
     "@nestjs-modules/mailer": "^2.0.2",
@@ -65,6 +67,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.0.0",
     "@types/node": "^22.10.7",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^6.0.2",

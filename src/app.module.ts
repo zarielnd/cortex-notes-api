@@ -19,6 +19,9 @@ import mailConfig from './config/mail.config';
 import awsConfig from './config/aws.config';
 import { configValidationSchema } from './config/config.validation';
 import { createKeyv } from '@keyv/redis';
+import { SelectionsModule } from './modules/selections/selections.module';
+import { StorageService } from './modules/storage/storage.service';
+import { StorageModule } from './modules/storage/storage.module';
 console.log(__dirname);
 @Module({
   imports: [
@@ -73,8 +76,10 @@ console.log(__dirname);
     UsersModule,
     RolesModule,
     PermissionsModule,
+    SelectionsModule,
+    StorageModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, StorageService],
 })
 export class AppModule {}

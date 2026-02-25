@@ -2,22 +2,26 @@ import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import {
   PasswordChangedEmailJobDto,
   ResetPasswordEmailJobDto,
+  SelectionInviteEmailJobDto,
   WelcomeEmailJobDto,
 } from './dto/mail-job.dto';
 import {
   MAIL_QUEUE,
   SEND_PASSWORD_CHANGED_JOB,
   SEND_RESET_PASSWORD_JOB,
+  SEND_SELECTION_INVITE_JOB,
   SEND_WELCOME_EMAIL_JOB,
 } from './mail.constants';
 import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
+import { ConfigService } from '@nestjs/config';
 
 type MailJobData =
   | WelcomeEmailJobDto
   | ResetPasswordEmailJobDto
-  | PasswordChangedEmailJobDto;
+  | PasswordChangedEmailJobDto
+  | SelectionInviteEmailJobDto;
 
 @Processor(MAIL_QUEUE)
 export class MailProcessor extends WorkerHost {
@@ -26,7 +30,10 @@ export class MailProcessor extends WorkerHost {
   onFailed(job: Job, err: Error) {
     console.log('Job failed:', err.message);
   }
-  constructor(private readonly mailService: MailerService) {
+  constructor(
+    private readonly mailService: MailerService,
+    private readonly configService: ConfigService,
+  ) {
     super();
   }
 
@@ -46,6 +53,11 @@ export class MailProcessor extends WorkerHost {
       case SEND_PASSWORD_CHANGED_JOB:
         await this.handlePasswordChangedEmail(
           job.data as PasswordChangedEmailJobDto,
+        );
+        break;
+      case SEND_SELECTION_INVITE_JOB:
+        await this.handleSelectionInviteEmail(
+          job.data as SelectionInviteEmailJobDto,
         );
         break;
 
@@ -90,6 +102,22 @@ export class MailProcessor extends WorkerHost {
       template: 'password-changed-email',
       context: {
         firstName: data.firstName,
+      },
+    });
+  }
+  private async handleSelectionInviteEmail(
+    data: SelectionInviteEmailJobDto,
+  ): Promise<void> {
+    await this.mailService.sendMail({
+      to: data.to,
+      subject: `You've been added to "${data.selectionName}"`,
+      template: 'selection-invite',
+      context: {
+        firstName: data.firstName,
+        inviterName: data.inviterName,
+        selectionName: data.selectionName,
+        selectionUrl: `${this.configService.get<string>('app.url')}/selections/${data.selectionId}`,
+        role: data.role,
       },
     });
   }
