@@ -169,7 +169,7 @@ export class SelectionsService {
     return { message: 'Selection deleted successfully' };
   }
 
-  // ─── Member management ──────────────────────────────────────────────────────
+  // ─── Member management 
 
   async addMember(
     selectionId: string,
