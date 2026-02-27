@@ -1,308 +1,233 @@
-🧠 Notion-like Collaborative Workspace (Backend)
+# 🧠 Collaborative Workspace Backend API
 
 A production-oriented, modular monolith backend system inspired by Notion.
-Built with NestJS, TypeORM, SQL Server, Redis, BullMQ, AWS S3, and CASL.
 
-🚀 Overview
+## 🚀 Tech Stack
+
+- NestJS 10
+- TypeORM
+- SQL Server
+- Redis
+- BullMQ
+- AWS S3
+- CASL
+- JWT (Access + Refresh Rotation)
+
+---
+
+## 📌 Overview
 
 This project implements a collaborative workspace system supporting:
 
-Multi-user workspaces (Selections)
+- Multi-user workspaces (Selections)
+- Role-based access control (system-level + workspace-level)
+- JWT access/refresh token rotation with reuse detection
+- Redis caching with explicit invalidation
+- Background jobs with BullMQ
+- S3 presigned upload flow
+- Note versioning with transactional consistency
+- Soft-delete lifecycle management
+- Structured logging & RFC7807 error normalization
 
-Role-based access control (system-level + workspace-level)
+Architecture follows a **Modular Monolith** pattern.
 
-JWT access/refresh token rotation with reuse detection
+---
 
-Redis caching & namespace invalidation strategy
+## 🏗 Architecture
 
-Background jobs with BullMQ
+Each business domain is isolated into its own module:
 
-S3 presigned upload flow
+- AuthModule
+- UserModule
+- SelectionModule
+- NoteModule
+- AttachmentModule
+- PermissionModule
+- NotificationModule
+- MailModule
+- QueueModule
+- CoreModule
 
-Note versioning with transactional consistency
+Modules communicate only through injected services.
 
-Soft-delete lifecycle management
+---
 
-Production-grade logging and error normalization
+## 🔐 Authentication
 
-The system follows a Modular Monolith architecture with strict module boundaries.
+### Access Token
+- JWT
+- 15 minutes TTL
+- Sent via Authorization header
 
-🏗 Architecture
+### Refresh Token
+- 30 days TTL
+- Stored as SHA-256 hash in database
+- Sent via HttpOnly + Secure cookie
+- Token rotation with reuse detection
+- Family invalidation support
 
-Pattern: Modular Monolith
-Runtime: Node.js 20 LTS
-Framework: NestJS 10
+---
 
-Each business domain is encapsulated in its own module:
+## 🛡 Authorization (CASL)
 
-AuthModule
-UserModule
-SelectionModule
-NoteModule
-AttachmentModule
-PermissionModule
-NotificationModule
-MailModule
-QueueModule
-CoreModule
-
-Modules communicate only through injected services — never via direct repository access across boundaries.
-
-🔐 Authentication & Authorization
-Authentication
-
-JWT Access Token (15 min)
-
-Opaque Refresh Token (30 days, stored as SHA-256 hash)
-
-Token rotation with reuse detection
-
-Refresh family invalidation
-
-HttpOnly + Secure + SameSite cookies
-
-Authorization
-
-Implemented using CASL with dynamic ability building per request.
-
-Supports:
-
-System-level roles (Admin, User)
-
-Workspace-level roles (Owner, Editor, Viewer)
-
-Conditional permissions (e.g. delete own note only)
+- System roles: Admin, User
+- Workspace roles: Owner, Editor, Viewer
+- Conditional permission support
 
 Example rule:
 
-can(Action.Update, 'Note', { authorId: user.id });
-🗄 Database Design
+`can(Action.Update, 'Note', { authorId: user.id })`
 
-Database: SQL Server
-ORM: TypeORM
+Ability is built dynamically per request.
 
-Key entities:
+---
 
-Users
+## 🗄 Database
 
-Roles
+**Database:** SQL Server  
+**ORM:** TypeORM  
 
-Permissions
+Core entities:
 
-Selections (Workspaces)
+- Users
+- Roles
+- Permissions
+- Selections
+- SelectionMembers
+- Notes
+- NoteVersions
+- Attachments
+- RefreshTokens
 
-SelectionMembers
+### Soft Delete
 
-Notes
+Primary entities use `@DeleteDateColumn()`.
 
-NoteVersions
+- Soft delete by default
+- Hard delete via scheduled cleanup job
 
-Attachments
+---
 
-RefreshTokens
+## 📦 Core Features
 
-Soft Delete Strategy
+### Workspace Management
+- Create workspace
+- Add/remove members
+- Assign roles
+- Workspace-level role override
+- Membership cache invalidation
 
-Primary entities use @DeleteDateColumn().
+### Notes
+- CRUD operations
+- Authorization matrix
+- Version snapshot on update
+- Wrapped in transaction
 
-Soft deletes default
-
-Hard deletes handled by scheduled cleanup job
-
-withDeleted() used in admin endpoints
-
-🧩 Core Features
-1️⃣ Workspace (Selection) Management
-
-Create workspace
-
-Add/remove members
-
-Assign roles
-
-Role override per workspace
-
-Membership cache invalidation
-
-2️⃣ Notes
-
-CRUD operations
-
-Authorization matrix
-
-Version snapshot on every update
-
-Transactional consistency
-
-3️⃣ Attachments (S3 Presigned Flow)
+### Attachments (AWS S3)
 
 Upload flow:
+1. Request presigned PUT URL
+2. Upload directly to S3
+3. Confirm upload
+4. Store metadata
 
-Request presigned PUT URL
+Download via presigned GET URL.
 
-Client uploads directly to S3
+---
 
-Confirm upload
-
-Store attachment metadata
-
-Download via presigned GET URL (never public bucket).
-
-⚡ Redis Strategy
+## ⚡ Redis Strategy
 
 Used for:
 
-User cache
+- User cache
+- Workspace cache
+- Ability cache
+- Reset token storage
+- BullMQ queues
 
-Workspace cache
+Key pattern examples:
 
-Ability cache
+- user:{id}
+- selection:{id}
+- selection:{id}:members
+- note:{id}
+- ability:{userId}:{selectionId}
 
-Reset token storage
+---
 
-BullMQ
-
-Namespace pattern example:
-
-user:{id}
-selection:{id}
-selection:{id}:members
-note:{id}
-ability:{userId}:{selectionId}
-
-Explicit invalidation on updates.
-
-📨 Background Jobs (BullMQ)
+## 📨 Background Jobs (BullMQ)
 
 Queues:
 
-mail
-
-notifications
-
-storage
-
-cleanup
+- mail
+- notifications
+- storage
+- cleanup
 
 Used for:
 
-Welcome email
+- Welcome emails
+- Reset password emails
+- Invitation notifications
+- S3 cleanup
+- Soft-delete cleanup
 
-Reset password email
+---
 
-Invitation email
+## 🛡 Security
 
-S3 deletion
+- Helmet
+- Rate limiting
+- Global validation pipe
+- Structured logging
+- Parameterized queries
+- Bcrypt (cost 12)
+- Secrets via environment variables
 
-Soft-delete cleanup
+---
 
-Exponential backoff (3 retries).
-Failed jobs retained for observability.
+## 🐳 Docker
 
-🛡 Security
-
-Helmet
-
-Rate limiting
-
-Global validation pipe
-
-RFC 7807 error normalization
-
-Structured logging with correlation IDs
-
-Parameterized queries only
-
-Secrets via environment variables
-
-Bcrypt (cost 12)
-
-📊 Observability
-
-Winston structured JSON logging
-
-Request duration logging
-
-Correlation ID via AsyncLocalStorage
-
-Health check endpoint (/health)
-
-BullMQ failure monitoring
-
-📂 Project Structure
-src/
-core/
-auth/
-users/
-selections/
-notes/
-attachments/
-permissions/
-notifications/
-mail/
-queue/
-🐳 Docker
-
-The application can be containerized with:
-
-SQL Server
-
-Redis
-
-API service
-
-Example:
+Run with:
 
 docker-compose up --build
-🔧 Environment Variables
-DATABASE_URL=
-REDIS_URL=
-JWT_ACCESS_SECRET=
-JWT_REFRESH_SECRET=
-AWS_REGION=
-AWS_BUCKET=
-MAIL_HOST=
-MAIL_FROM=
-APP_URL=
 
-All variables validated at startup using Joi schema.
+---
 
-🧪 Production Readiness
+## 🔧 Environment Variables
 
-Migrations only (synchronize disabled)
+Required:
 
-Seed script for default roles/admin
+DATABASE_URL  
+REDIS_URL  
+JWT_ACCESS_SECRET  
+JWT_REFRESH_SECRET  
+AWS_REGION  
+AWS_BUCKET  
+MAIL_HOST  
+MAIL_FROM  
+APP_URL  
 
-Health check endpoint
+All validated at startup using Joi schema.
 
-Queue monitoring
+---
 
-Structured error handling
+## 🎯 Why This Project?
 
-Token reuse detection
+Demonstrates:
 
-Soft delete retention strategy
+- Backend architecture design
+- Secure authentication system
+- Fine-grained authorization
+- Cache strategy design
+- Background job processing
+- File storage best practices
+- Production hardening mindset
 
-📌 Why This Project?
+---
 
-This project demonstrates:
+## 👨‍💻 Author
 
-Backend architecture design
-
-Secure authentication system
-
-Fine-grained authorization
-
-Cache strategy design
-
-Background job processing
-
-File storage best practices
-
-Production hardening mindset
-
-🧠 Author
-
-Phương Nam
-Backend-focused Full-Stack Developer
+Phương Nam  
+Backend-focused Full-Stack Developer  
 NestJS · .NET · React
