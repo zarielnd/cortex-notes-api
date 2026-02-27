@@ -1,27 +1,36 @@
 import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
-  ForbiddenException,
-  ConflictException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { Selection } from 'src/entities/selection.entity';
 import { SelectionMember } from 'src/entities/selection-member.entity';
 import { User } from 'src/entities/user.entity';
-import { CreateSelectionDto } from './dto/create-selection.dto';
-import { UpdateSelectionDto } from './dto/update-selection.dto';
-import { AddMemberDto } from './dto/add-member.dto';
-import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
+import {
+  Action,
+  CaslAbilityFactory,
+} from 'src/infrastructure/casl/casl-ability.factory';
+import { RedisService } from 'src/infrastructure/redis/redis.service';
+import { DataSource, Repository } from 'typeorm';
+import { MailService } from '../mail/mail.service';
+
+import { Selection } from 'src/entities/selection.entity';
+import { RedisKeys } from 'src/infrastructure/redis/redis-key.constant';
+import {
+  AddMemberDto,
+  CreateSelectionDto,
+  UpdateMemberRoleDto,
+  UpdateSelectionDto,
+} from './dto';
 import { SelectionMemberRole } from './enums/selection-member-role.enum';
 import {
-  canManageSelection,
-  canEditSelection,
-  canViewSelection,
   canDeleteSelection,
+  canEditSelection,
+  canManageSelection,
+  canViewSelection,
 } from './helpers/selection-policy.helper';
-import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class SelectionsService {
@@ -34,6 +43,8 @@ export class SelectionsService {
     private readonly userRepository: Repository<User>,
     private readonly mailService: MailService,
     private readonly dataSource: DataSource,
+    private readonly caslAbilityFactory: CaslAbilityFactory,
+    private readonly redisService: RedisService,
   ) {}
 
   //Context helpers
@@ -53,7 +64,7 @@ export class SelectionsService {
     });
 
     return {
-      role: (member?.role ?? null) as SelectionMemberRole | null,
+      role: member?.role ?? null,
       isSystemAdmin: this.isSystemAdmin(user),
     };
   }
@@ -169,7 +180,7 @@ export class SelectionsService {
     return { message: 'Selection deleted successfully' };
   }
 
-  // ─── Member management 
+  // ─── Member management
 
   async addMember(
     selectionId: string,
@@ -237,44 +248,57 @@ export class SelectionsService {
 
   async updateMemberRole(
     selectionId: string,
-    memberId: string,
+    targetUserId: string, // Fix 20 — use userId not memberId
     dto: UpdateMemberRoleDto,
     requester: User,
   ): Promise<SelectionMember> {
     const selection = await this.selectionRepository.findOne({
       where: { id: selectionId },
     });
-
     if (!selection) throw new NotFoundException('Selection not found');
 
-    const ctx = await this.getMemberContext(selectionId, requester);
+    const ability = await this.caslAbilityFactory.createForUserInSelection(
+      requester,
+      selectionId,
+    );
 
-    if (!canManageSelection(ctx)) {
+    if (!ability.can(Action.Manage, Selection)) {
       throw new ForbiddenException('Only owners can change member roles');
     }
 
     const member = await this.memberRepository.findOne({
-      where: { id: memberId, selectionId },
+      where: { selectionId, userId: targetUserId },
       relations: ['user'],
     });
-
     if (!member) throw new NotFoundException('Member not found');
 
-    // Prevent demoting the last owner
     if (member.role === SelectionMemberRole.OWNER) {
       const ownerCount = await this.memberRepository.count({
         where: { selectionId, role: SelectionMemberRole.OWNER },
       });
 
       if (ownerCount <= 1 && dto.role !== SelectionMemberRole.OWNER) {
-        throw new BadRequestException(
-          'Cannot demote the last owner of a selection',
-        );
+        throw new BadRequestException('Cannot demote the last owner');
       }
     }
 
     member.role = dto.role;
-    return this.memberRepository.save(member);
+    const saved = await this.memberRepository.save(member);
+
+    // Invalidate both selection cache and this user's ability cache
+    this.invalidateSelectionCache(selectionId);
+    await this.caslAbilityFactory.invalidateAbilityCache(
+      targetUserId,
+      selectionId,
+    );
+
+    return saved;
+  }
+  private async invalidateSelectionCache(id: string): Promise<void> {
+    await this.redisService.del(
+      RedisKeys.selection(id),
+      RedisKeys.selectionMembers(id),
+    );
   }
 
   async removeMember(

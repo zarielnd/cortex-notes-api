@@ -1,17 +1,17 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  UpdateDateColumn,
   DeleteDateColumn,
+  Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
-  JoinColumn,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { User } from './user.entity';
-import { SelectionMember } from './selection-member.entity';
 import { Note } from './note.entity';
+import { SelectionMember } from './selection-member.entity';
+import { User } from './user.entity';
 
 @Entity('selections')
 export class Selection {

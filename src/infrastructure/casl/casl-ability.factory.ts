@@ -2,18 +2,19 @@ import {
   AbilityBuilder,
   createMongoAbility,
   ExtractSubjectType,
-  InferSubjects,
   MongoAbility,
 } from '@casl/ability';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Note } from 'src/entities/note.entity';
 import { SelectionMember } from 'src/entities/selection-member.entity';
+import { Selection } from 'src/entities/selection.entity';
 import { User, UserStatus } from 'src/entities/user.entity';
 import { SelectionMemberRole } from 'src/modules/selections/enums/selection-member-role.enum';
 import { Repository } from 'typeorm';
 import { RedisKeys, RedisTtl } from '../redis/redis-key.constant';
 import { RedisService } from '../redis/redis.service';
+import { Subjects } from './types/casl.types';
 
 export enum Action {
   Manage = 'manage',
@@ -22,10 +23,6 @@ export enum Action {
   Update = 'update',
   Delete = 'delete',
 }
-
-type Subjects = InferSubjects<
-  typeof User | typeof Note | typeof Selection | 'all'
->;
 
 export type AppAbility = MongoAbility<[Action, Subjects]>;
 
