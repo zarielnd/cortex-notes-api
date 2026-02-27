@@ -6,7 +6,7 @@ A production-oriented, modular monolith backend system inspired by Notion.
 
 - NestJS 10
 - TypeORM
-- SQL Server
+- PostgreSql
 - Redis
 - BullMQ
 - AWS S3
@@ -43,10 +43,9 @@ Each business domain is isolated into its own module:
 - NoteModule
 - AttachmentModule
 - PermissionModule
-- NotificationModule
 - MailModule
 - QueueModule
-- CoreModule
+- AppModule
 
 Modules communicate only through injected services.
 
@@ -84,7 +83,7 @@ Ability is built dynamically per request.
 
 ## 🗄 Database
 
-**Database:** Postgresql
+**Database:** PostgreSql
 **ORM:** TypeORM  
 
 Core entities:
