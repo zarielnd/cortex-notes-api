@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 ############################
-# 1️⃣ Dependencies stage
+# 1️. Dependencies stage
 ############################
 FROM node:20-alpine AS deps
 
@@ -19,7 +19,7 @@ RUN npm ci
 
 
 ############################
-# 2️⃣ Build stage
+# 2️. Build stage
 ############################
 FROM node:20-alpine AS builder
 
@@ -34,7 +34,7 @@ RUN npm run build
 
 
 ############################
-# 3️⃣ Production runtime
+# 3️. Production runtime
 ############################
 FROM node:20-alpine AS runner
 

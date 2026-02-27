@@ -35,21 +35,128 @@ Architecture follows a **Modular Monolith** pattern.
 
 ## 🏗 Architecture
 
-Each business domain is isolated into its own module:
+This project follows a **Modular Monolith** architecture with clear separation between:
 
-- AuthModule
-- UserModule
-- SelectionModule
-- NoteModule
-- AttachmentModule
-- PermissionModule
-- MailModule
-- QueueModule
-- AppModule
-
-Modules communicate only through injected services.
+- Domain modules
+- Infrastructure layer
+- Shared common layer
+- Configuration layer
 
 ---
+
+## 📂 Project Structure
+
+src/
+
+- common/
+- config/
+- entities/
+- infrastructure/
+- modules/
+- app.module.ts
+- data-source.ts
+- main.ts
+
+---
+
+## 🧩 Domain Modules (Business Logic)
+
+Location:
+
+src/modules/
+
+Modules:
+
+- attachments
+- auth
+- mail
+- notes
+- permissions
+- roles
+- selections
+- storage
+- users
+
+Each module encapsulates:
+
+- Controllers
+- Services
+- DTOs
+- Business rules
+- Authorization logic
+
+Domain modules do not directly manage infrastructure configuration.
+
+---
+
+## 🧱 Infrastructure Layer
+
+Location:
+
+src/infrastructure/
+
+Contains technical concerns shared across the system.
+
+### CASL
+
+- Ability factory
+- Action enums
+- Ability types
+- CASL module setup
+
+### Database
+
+- TypeORM configuration
+- Data source
+- Migrations
+- Seed scripts
+
+### Queue
+
+- BullMQ integration
+- Email worker
+- Background processors
+
+### Redis
+
+- Redis connection
+- Cache configuration
+- Token storage backend
+
+Infrastructure is injected into domain modules via dependency injection.
+
+---
+
+## 🧰 Common Layer
+
+Location:
+
+src/common/
+
+Shared cross-cutting components:
+
+- decorators
+- filters
+- guards
+- interceptors
+- types
+- utils
+
+This layer contains reusable building blocks used across modules.
+
+---
+
+## ⚙ Configuration
+
+Location:
+
+src/config/
+
+- Environment configuration
+- Validation schema
+- Centralized config service
+
+All environment variables are validated at startup.
 
 ## 🔐 Authentication
 
@@ -194,7 +301,7 @@ Used for:
 
 Run with:
 
-docker-compose up --build
+`docker-compose up --build`
 
 ---
 
@@ -264,5 +371,5 @@ Demonstrates:
 ## 👨‍💻 Author
 
 Phương Nam  
-Backend-focused Full-Stack Developer  
+Backend-focused Full-Stack Developer
 NestJS · .NET · React

@@ -1,5 +1,5 @@
-import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
+import { DataSource } from 'typeorm';
 dotenv.config();
 
 export default new DataSource({
@@ -11,6 +11,10 @@ export default new DataSource({
   database: process.env.DB_DATABASE,
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
   synchronize: false,
-  entities: ['src/**/*.entity.ts'],
-  migrations: ['src/infrastructure/database/migrations/*.ts'],
+  entities: [__dirname + '/**/*.entity{.ts,.js}'],
+  migrations: [__dirname + '/infrastructure/database/migrations/*{.ts,.js}'],
+  extra: {
+    max: 10,
+  },
+  logging: ['error', 'warn'],
 });

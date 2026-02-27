@@ -13,21 +13,19 @@ import { TypeOrmModule } from '@nestjs/typeorm';
         username: configService.get<string>('database.username'),
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.name'),
-        options: {
-          encrypt: configService.get<boolean>('database.encrypt'),
-          trustServerCertificate: true,
-        },
+        ssl: configService.get<boolean>('database.ssl')
+          ? { rejectUnauthorized: false }
+          : false,
         autoLoadEntities: true,
-        migrations: [__dirname + '/../migrations/*{.ts,.js}'],
         synchronize: false,
+        migrations: [__dirname + '/migrations/*{.ts,.js}'],
+
         logging: configService.get<string>('app.nodeEnv') === 'development',
         extra: {
-          pool: {
-            max: 10,
-            min: 2,
-            idleTimeoutMillis: 30000,
-            acquireTimeoutMillis: 30000,
-          },
+          max: 10,
+          min: 2,
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 30000,
         },
       }),
     }),
