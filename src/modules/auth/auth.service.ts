@@ -1,30 +1,29 @@
 import {
   BadRequestException,
-  Body,
   ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { RegisterDto } from './dto/register.dto';
-import { v4 as uuidv4 } from 'uuid';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { DataSource, LessThan, Repository } from 'typeorm';
-import { User, UserStatus } from '../../entities/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import { RefreshToken } from '../../entities/refresh-token.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { MailService } from '../mail/mail.service';
-import { ConfigService } from '@nestjs/config';
-import { LoginDto } from './dto/login.dto';
-import { AuthTokens } from './interfaces/auth-tokens.interface';
-import { ms } from 'src/common/utils/ms.util';
-import { JwtPayload } from './strategies/jwt.strategy';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { StringValue } from 'ms';
+import { ms } from 'src/common/utils/ms.util';
+import { DataSource, IsNull, LessThan, Repository } from 'typeorm';
+import { v4 as uuidv4 } from 'uuid';
+import { RefreshToken } from '../../entities/refresh-token.entity';
+import { User, UserStatus } from '../../entities/user.entity';
+import { MailService } from '../mail/mail.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { AuthTokens } from './interfaces/auth-tokens.interface';
+import { JwtPayload } from './strategies/jwt.strategy';
 
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCK_DURATION_MINUTES = 30;
@@ -90,7 +89,7 @@ export class AuthService {
         'firstName',
         'lastName',
       ],
-    relations:{roles:{permissions: true}}
+      relations: { roles: { permissions: true } },
     });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -107,7 +106,7 @@ export class AuthService {
       user.lockedUntil = null as unknown as Date;
     }
 
-    if (user.status === UserStatus.INACTIVE) {
+    if (user.status === UserStatus.PENDING) {
       throw new ForbiddenException(
         'Account is inactive. Please contact support.',
       );
@@ -378,18 +377,21 @@ export class AuthService {
   }
 
   async findByJti(jti: string): Promise<RefreshToken | null> {
-    return await this.refreshTokenRepository.findOne({
-      where: { jti, isRevoked: false },
+    return this.refreshTokenRepository.findOne({
+      where: { jti, revokedAt: IsNull() },
     });
   }
 
   async revokeByJti(jti: string): Promise<void> {
-    await this.refreshTokenRepository.update({ jti }, { isRevoked: true });
+    await this.refreshTokenRepository.update(
+      { jti },
+      { revokedAt: new Date() },
+    );
   }
   async revokeAllForUser(userId: string): Promise<void> {
     await this.refreshTokenRepository.update(
-      { userId, isRevoked: false },
-      { isRevoked: true },
+      { userId, revokedAt: IsNull() },
+      { revokedAt: new Date() },
     );
   }
   async cleanupExpired(): Promise<void> {

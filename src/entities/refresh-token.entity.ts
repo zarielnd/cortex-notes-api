@@ -1,11 +1,11 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
-  ManyToOne,
-  JoinColumn,
+  Entity,
   Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 
@@ -37,9 +37,11 @@ export class RefreshToken {
   @Column({ type: 'timestamp' })
   expiresAt: Date;
 
-  @Column({ default: false })
-  isRevoked: boolean;
-
+  @Column({ type: 'timestamp', nullable: true })
+  revokedAt: Date | null;
   @CreateDateColumn()
   createdAt: Date;
+  get isRevoked(): boolean {
+    return this.revokedAt !== null;
+  }
 }

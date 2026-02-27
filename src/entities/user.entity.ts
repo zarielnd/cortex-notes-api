@@ -1,22 +1,23 @@
+import * as bcrypt from 'bcrypt';
 import {
-  Column,
-  Entity,
-  PrimaryGeneratedColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
   BeforeInsert,
   BeforeUpdate,
+  Column,
+  CreateDateColumn,
   DeleteDateColumn,
+  Entity,
   JoinTable,
   ManyToMany,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import * as bcrypt from 'bcrypt';
 import { Role } from './role.entity';
 
 export enum UserStatus {
   ACTIVE = 'active',
-  INACTIVE = 'inactive',
   LOCKED = 'locked',
+  DISABLED = 'disabled',
+  PENDING = 'pending',
 }
 
 @Entity('users')
