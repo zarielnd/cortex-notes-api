@@ -13,6 +13,11 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { StringValue } from 'ms';
 import { ms } from 'src/common/utils/ms.util';
+import {
+  RedisKeys,
+  RedisTtl,
+} from 'src/infrastructure/redis/redis-key.constant';
+import { RedisService } from 'src/infrastructure/redis/redis.service';
 import { DataSource, IsNull, LessThan, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { RefreshToken } from '../../entities/refresh-token.entity';
@@ -40,6 +45,7 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly configService: ConfigService,
     private readonly dataSource: DataSource,
+    private readonly redisService: RedisService,
   ) {}
 
   async register(dto: RegisterDto): Promise<{ message: string }> {
@@ -128,6 +134,8 @@ export class AuthService {
     user.lastLoginAt = new Date();
     await this.userRepository.save(user);
 
+    await this.redisService.del(RedisKeys.user(user.id));
+
     return this.generateTokens(user, userAgent, ipAddress);
   }
 
@@ -152,12 +160,18 @@ export class AuthService {
 
     const storedToken = await this.findByJti(payload.jti);
 
-    if (!storedToken || storedToken.isRevoked) {
+    if (!storedToken) {
       // Possible token reuse — revoke all tokens for this user
       await this.revokeAllForUser(payload.sub);
       throw new UnauthorizedException(
         'Refresh token reuse detected. All sessions revoked.',
       );
+    }
+
+    const incomingHash = await this.hashToken(token);
+    if (!this.timingSafeEqual(incomingHash, storedToken.tokenHash)) {
+      await this.revokeAllForUser(payload.sub);
+      throw new UnauthorizedException('Token tampering detected');
     }
 
     const isValid = await bcrypt.compare(token, storedToken.tokenHash);
@@ -181,6 +195,11 @@ export class AuthService {
     return this.generateTokens(user, userAgent, ipAddress);
   }
 
+  private timingSafeEqual(a: string, b: string): boolean {
+    if (a.length !== b.length) return false;
+    return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
+  }
+
   async forgotPassword(dto: ForgotPasswordDto): Promise<{ message: string }> {
     const user = await this.userRepository.findOne({
       where: { email: dto.email },
@@ -193,20 +212,19 @@ export class AuthService {
       };
     }
 
-    const resetToken = uuidv4();
+    const rawToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto
       .createHash('sha256')
-      .update(resetToken)
+      .update(rawToken)
       .digest('hex');
 
-    user.resetPasswordToken = hashedToken;
-    user.resetPasswordExpires = new Date(
-      Date.now() + RESET_PASSWORD_EXPIRES_MINUTES * 60 * 1000,
+    await this.redisService.set(
+      RedisKeys.resetToken(hashedToken),
+      user.id,
+      RedisTtl.RESET_TOKEN,
     );
 
-    await this.userRepository.save(user);
-
-    const resetLink = `${this.configService.get<string>('app.url')}/auth/reset-password?token=${resetToken}`;
+    const resetLink = `${this.configService.get<string>('app.url')}/auth/reset-password?token=${rawToken}`;
 
     await this.mailService.sendResetPasswordEmail({
       to: user.email,
@@ -222,14 +240,15 @@ export class AuthService {
       .createHash('sha256')
       .update(dto.token)
       .digest('hex');
-
-    const user = await this.userRepository
-      .createQueryBuilder('user')
-      .addSelect('user.resetPasswordToken')
-      .addSelect('user.resetPasswordExpires')
-      .addSelect('user.password')
-      .where('user.resetPasswordToken = :token', { token: hashedToken })
-      .getOne();
+    const redisKey = RedisKeys.resetToken(hashedToken);
+    const userId = await this.redisService.get(redisKey);
+    if (!userId) {
+      throw new BadRequestException('Invalid or expired reset token');
+    }
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['id', 'email', 'firstName', 'password'],
+    });
 
     if (
       !user ||
@@ -239,13 +258,16 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired reset token');
     }
 
+    if (!user) throw new NotFoundException('User not found');
+
     await this.dataSource.transaction(async (manager) => {
       user.password = dto.newPassword;
-      user.resetPasswordToken = null as unknown as string;
-      user.resetPasswordExpires = null as unknown as Date;
       await manager.save(User, user);
-
       await this.revokeAllForUser(user.id);
+      // Delete the reset token from Redis atomically with the transaction
+      await this.redisService.del(redisKey);
+      // Invalidate user cache
+      await this.redisService.del(RedisKeys.user(user.id));
     });
 
     await this.mailService.sendPasswordChangedEmail({
