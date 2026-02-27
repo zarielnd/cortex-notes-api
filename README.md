@@ -54,11 +54,13 @@ Modules communicate only through injected services.
 ## 🔐 Authentication
 
 ### Access Token
+
 - JWT
 - 15 minutes TTL
 - Sent via Authorization header
 
 ### Refresh Token
+
 - 30 days TTL
 - Stored as SHA-256 hash in database
 - Sent via HttpOnly + Secure cookie
@@ -84,7 +86,7 @@ Ability is built dynamically per request.
 ## 🗄 Database
 
 **Database:** PostgreSql
-**ORM:** TypeORM  
+**ORM:** TypeORM
 
 Core entities:
 
@@ -110,6 +112,7 @@ Primary entities use `@DeleteDateColumn()`.
 ## 📦 Core Features
 
 ### Workspace Management
+
 - Create workspace
 - Add/remove members
 - Assign roles
@@ -117,6 +120,7 @@ Primary entities use `@DeleteDateColumn()`.
 - Membership cache invalidation
 
 ### Notes
+
 - CRUD operations
 - Authorization matrix
 - Version snapshot on update
@@ -125,6 +129,7 @@ Primary entities use `@DeleteDateColumn()`.
 ### Attachments (AWS S3)
 
 Upload flow:
+
 1. Request presigned PUT URL
 2. Upload directly to S3
 3. Confirm upload
@@ -196,7 +201,8 @@ docker-compose up --build
 ## 🔧 Environment Variables
 
 Required:
-```
+
+```env
 # App
 NODE_ENV=
 PORT=
