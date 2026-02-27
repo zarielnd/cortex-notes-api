@@ -84,7 +84,7 @@ Ability is built dynamically per request.
 
 ## 🗄 Database
 
-**Database:** SQL Server  
+**Database:** Postgresql
 **ORM:** TypeORM  
 
 Core entities:
