@@ -90,7 +90,7 @@ export class AuthService {
         'firstName',
         'lastName',
       ],
-      relations: ['roles', 'roles.permissions'],
+    relations:{roles:{permissions: true}}
     });
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');

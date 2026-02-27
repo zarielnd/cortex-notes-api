@@ -1,22 +1,27 @@
 import {
+  BadRequestException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
-  ForbiddenException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { Attachment, AttachmentType } from 'src/entities/attachment.entity';
 import { Note } from 'src/entities/note.entity';
 import { SelectionMember } from 'src/entities/selection-member.entity';
 import { User } from 'src/entities/user.entity';
-import { StorageService } from '../storage/storage.service';
+import { Repository } from 'typeorm';
 import { SelectionMemberRole } from '../selections/enums/selection-member-role.enum';
 import {
+  canDeleteSelection,
   canEditSelection,
   canViewSelection,
-  canDeleteSelection,
 } from '../selections/helpers/selection-policy.helper';
+import {
+  PresignedDownloadUrl,
+  PresignedUploadUrl,
+  StorageService,
+} from '../storage/storage.service';
+import { PresignUploadRequestDto } from './dto/presign-upload-request.dto';
 
 const ALLOWED_MIME_TYPES = new Set([
   'image/jpeg',
@@ -179,7 +184,10 @@ export class AttachmentsService {
 
     return { message: 'Attachment deleted successfully' };
   }
-
+  /**
+   *
+   * @deprecated
+   */
   async getPresignedUrl(
     noteId: string,
     attachmentId: string,
@@ -205,5 +213,49 @@ export class AttachmentsService {
     );
 
     return { url, expiresIn };
+  }
+  async getPresignedUploadUrl(
+    noteId: string,
+    dto: PresignUploadRequestDto,
+    user: User,
+  ): Promise<PresignedUploadUrl> {
+    const note = await this.getNoteOrFail(noteId);
+    const ctx = await this.getMemberContext(note.selectionId, user);
+
+    if (!canEditSelection(ctx)) {
+      throw new ForbiddenException('Editor or owner access required to upload');
+    }
+
+    if (!ALLOWED_MIME_TYPES.has(dto.mimeType)) {
+      throw new BadRequestException(
+        `File type "${dto.mimeType}" is not allowed`,
+      );
+    }
+
+    return this.storageService.getPresignedUploadUrl(
+      `notes/${noteId}`,
+      dto.originalName,
+      dto.mimeType,
+    );
+  }
+  async getPresignedDownloadUrl(
+    noteId: string,
+    attachmentId: string,
+    user: User,
+  ): Promise<PresignedDownloadUrl> {
+    const note = await this.getNoteOrFail(noteId);
+    const ctx = await this.getMemberContext(note.selectionId, user);
+
+    if (!canViewSelection(ctx)) {
+      throw new ForbiddenException('No access to this note');
+    }
+
+    const attachment = await this.attachmentRepository.findOne({
+      where: { id: attachmentId, noteId },
+    });
+
+    if (!attachment) throw new NotFoundException('Attachment not found');
+
+    return this.storageService.getPresignedDownloadUrl(attachment.s3Key);
   }
 }

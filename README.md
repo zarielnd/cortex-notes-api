@@ -1,98 +1,308 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+🧠 Notion-like Collaborative Workspace (Backend)
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A production-oriented, modular monolith backend system inspired by Notion.
+Built with NestJS, TypeORM, SQL Server, Redis, BullMQ, AWS S3, and CASL.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+🚀 Overview
 
-## Description
+This project implements a collaborative workspace system supporting:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Multi-user workspaces (Selections)
 
-## Project setup
+Role-based access control (system-level + workspace-level)
 
-```bash
-$ npm install
-```
+JWT access/refresh token rotation with reuse detection
 
-## Compile and run the project
+Redis caching & namespace invalidation strategy
 
-```bash
-# development
-$ npm run start
+Background jobs with BullMQ
 
-# watch mode
-$ npm run start:dev
+S3 presigned upload flow
 
-# production mode
-$ npm run start:prod
-```
+Note versioning with transactional consistency
 
-## Run tests
+Soft-delete lifecycle management
 
-```bash
-# unit tests
-$ npm run test
+Production-grade logging and error normalization
 
-# e2e tests
-$ npm run test:e2e
+The system follows a Modular Monolith architecture with strict module boundaries.
 
-# test coverage
-$ npm run test:cov
-```
+🏗 Architecture
 
-## Deployment
+Pattern: Modular Monolith
+Runtime: Node.js 20 LTS
+Framework: NestJS 10
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+Each business domain is encapsulated in its own module:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+AuthModule
+UserModule
+SelectionModule
+NoteModule
+AttachmentModule
+PermissionModule
+NotificationModule
+MailModule
+QueueModule
+CoreModule
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+Modules communicate only through injected services — never via direct repository access across boundaries.
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+🔐 Authentication & Authorization
+Authentication
 
-## Resources
+JWT Access Token (15 min)
 
-Check out a few resources that may come in handy when working with NestJS:
+Opaque Refresh Token (30 days, stored as SHA-256 hash)
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+Token rotation with reuse detection
 
-## Support
+Refresh family invalidation
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+HttpOnly + Secure + SameSite cookies
 
-## Stay in touch
+Authorization
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Implemented using CASL with dynamic ability building per request.
 
-## License
+Supports:
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+System-level roles (Admin, User)
+
+Workspace-level roles (Owner, Editor, Viewer)
+
+Conditional permissions (e.g. delete own note only)
+
+Example rule:
+
+can(Action.Update, 'Note', { authorId: user.id });
+🗄 Database Design
+
+Database: SQL Server
+ORM: TypeORM
+
+Key entities:
+
+Users
+
+Roles
+
+Permissions
+
+Selections (Workspaces)
+
+SelectionMembers
+
+Notes
+
+NoteVersions
+
+Attachments
+
+RefreshTokens
+
+Soft Delete Strategy
+
+Primary entities use @DeleteDateColumn().
+
+Soft deletes default
+
+Hard deletes handled by scheduled cleanup job
+
+withDeleted() used in admin endpoints
+
+🧩 Core Features
+1️⃣ Workspace (Selection) Management
+
+Create workspace
+
+Add/remove members
+
+Assign roles
+
+Role override per workspace
+
+Membership cache invalidation
+
+2️⃣ Notes
+
+CRUD operations
+
+Authorization matrix
+
+Version snapshot on every update
+
+Transactional consistency
+
+3️⃣ Attachments (S3 Presigned Flow)
+
+Upload flow:
+
+Request presigned PUT URL
+
+Client uploads directly to S3
+
+Confirm upload
+
+Store attachment metadata
+
+Download via presigned GET URL (never public bucket).
+
+⚡ Redis Strategy
+
+Used for:
+
+User cache
+
+Workspace cache
+
+Ability cache
+
+Reset token storage
+
+BullMQ
+
+Namespace pattern example:
+
+user:{id}
+selection:{id}
+selection:{id}:members
+note:{id}
+ability:{userId}:{selectionId}
+
+Explicit invalidation on updates.
+
+📨 Background Jobs (BullMQ)
+
+Queues:
+
+mail
+
+notifications
+
+storage
+
+cleanup
+
+Used for:
+
+Welcome email
+
+Reset password email
+
+Invitation email
+
+S3 deletion
+
+Soft-delete cleanup
+
+Exponential backoff (3 retries).
+Failed jobs retained for observability.
+
+🛡 Security
+
+Helmet
+
+Rate limiting
+
+Global validation pipe
+
+RFC 7807 error normalization
+
+Structured logging with correlation IDs
+
+Parameterized queries only
+
+Secrets via environment variables
+
+Bcrypt (cost 12)
+
+📊 Observability
+
+Winston structured JSON logging
+
+Request duration logging
+
+Correlation ID via AsyncLocalStorage
+
+Health check endpoint (/health)
+
+BullMQ failure monitoring
+
+📂 Project Structure
+src/
+core/
+auth/
+users/
+selections/
+notes/
+attachments/
+permissions/
+notifications/
+mail/
+queue/
+🐳 Docker
+
+The application can be containerized with:
+
+SQL Server
+
+Redis
+
+API service
+
+Example:
+
+docker-compose up --build
+🔧 Environment Variables
+DATABASE_URL=
+REDIS_URL=
+JWT_ACCESS_SECRET=
+JWT_REFRESH_SECRET=
+AWS_REGION=
+AWS_BUCKET=
+MAIL_HOST=
+MAIL_FROM=
+APP_URL=
+
+All variables validated at startup using Joi schema.
+
+🧪 Production Readiness
+
+Migrations only (synchronize disabled)
+
+Seed script for default roles/admin
+
+Health check endpoint
+
+Queue monitoring
+
+Structured error handling
+
+Token reuse detection
+
+Soft delete retention strategy
+
+📌 Why This Project?
+
+This project demonstrates:
+
+Backend architecture design
+
+Secure authentication system
+
+Fine-grained authorization
+
+Cache strategy design
+
+Background job processing
+
+File storage best practices
+
+Production hardening mindset
+
+🧠 Author
+
+Phương Nam
+Backend-focused Full-Stack Developer
+NestJS · .NET · React

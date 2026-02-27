@@ -16,7 +16,6 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes } from '@nestjs/swagger';
-import { memoryStorage } from 'multer';
 import { Attachment } from 'src/entities/attachment.entity';
 import { NoteVersion } from 'src/entities/note-version.entity';
 import { Note } from 'src/entities/note.entity';
@@ -24,6 +23,11 @@ import { User } from 'src/entities/user.entity';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AttachmentsService } from '../attachments/attachments.service';
+import { PresignUploadRequestDto } from '../attachments/dto/presign-upload-request.dto';
+import {
+  PresignedDownloadUrl,
+  PresignedUploadUrl,
+} from '../storage/storage.service';
 import { CreateNoteDto } from './dto/create-note.dto';
 import { UpdateNoteDto } from './dto/update-note.dto';
 import { NotesService } from './notes.service';
@@ -122,7 +126,11 @@ export class NotesController {
       },
     },
   })
-  @UseInterceptors(FilesInterceptor('files', 10, { storage: memoryStorage() }))
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      limits: { fileSize: 50 * 1028 },
+    }),
+  )
   uploadAttachments(
     @Param('id', ParseUUIDPipe) id: string,
     @UploadedFiles() files: Express.Multer.File[],
@@ -149,12 +157,24 @@ export class NotesController {
     return this.attachmentsService.remove(id, attachmentId, user);
   }
 
-  @Get(':id/attachments/:attachmentId/presign')
-  getPresignedUrl(
+  @Get(':id/attachments/:attachmentId/presign-download')
+  getPresignedDownloadUrl(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('attachmentId', ParseUUIDPipe) attachmentId: string,
     @CurrentUser() user: User,
-  ): Promise<{ url: string; expiresIn: number }> {
-    return this.attachmentsService.getPresignedUrl(id, attachmentId, user);
+  ): Promise<PresignedDownloadUrl> {
+    return this.attachmentsService.getPresignedDownloadUrl(
+      id,
+      attachmentId,
+      user,
+    );
+  }
+  @Post(':id/attachments/presign-upload')
+  getPresignedUploadUrl(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: PresignUploadRequestDto,
+    @CurrentUser() user: User,
+  ): Promise<PresignedUploadUrl> {
+    return this.attachmentsService.getPresignedUploadUrl(id, dto, user);
   }
 }

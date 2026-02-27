@@ -45,7 +45,7 @@ export class NotesService {
     });
 
     return {
-      role: (member?.role ?? null) as SelectionMemberRole | null,
+      role: (member?.role ?? null) as SelectionMemberRole,
       isSystemAdmin: this.isSystemAdmin(user),
     };
   }
@@ -59,16 +59,20 @@ export class NotesService {
 
     return this.noteRepository.find({
       where: { selectionId },
-      relations: ['creator', 'lastEditor', 'attachments'],
+      relations: { creator: true, lastEditor: true, attachments: true },
       order: { updatedAt: 'DESC' },
     });
   }
 
   async findOne(id: string, user: User): Promise<Note> {
-    const note = await this.noteRepository.findOne({
-      where: { id },
-      relations: ['creator', 'lastEditor', 'selection', 'attachments'],
-    });
+    const note = await this.noteRepository
+      .createQueryBuilder('note')
+      .leftJoinAndSelect('note.creator', 'creator')
+      .leftJoinAndSelect('note.lastEditor', 'lastEditor')
+      .leftJoinAndSelect('note.selection', 'selection')
+      .leftJoinAndSelect('note.attachments', 'attachments')
+      .where('note.id = :id', { id })
+      .getOne();
 
     if (!note) throw new NotFoundException('Note not found');
 
@@ -200,7 +204,7 @@ export class NotesService {
 
     return this.noteVersionRepository.find({
       where: { noteId: id },
-      relations: ['editor'],
+      relations: { editor: true },
       order: { versionNumber: 'DESC' },
     });
   }
@@ -222,7 +226,7 @@ export class NotesService {
 
     const version = await this.noteVersionRepository.findOne({
       where: { id: versionId, noteId },
-      relations: ['editor'],
+      relations: { editor: true },
     });
 
     if (!version) throw new NotFoundException('Version not found');
