@@ -4,6 +4,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -16,6 +17,10 @@ import mailConfig from './config/mail.config';
 import redisConfig from './config/redis.config';
 import { CaslModule } from './infrastructure/casl/casl.module';
 import { DatabaseModule } from './infrastructure/database/database.module';
+import { HealthController } from './infrastructure/health/health.controller';
+import { HealthModule } from './infrastructure/health/health.module';
+import { LoggerModule } from './infrastructure/logger/logger.module';
+import { RedisModule } from './infrastructure/redis/redis.module';
 import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { MailModule } from './modules/mail/mail.module';
@@ -42,7 +47,13 @@ console.log(__dirname);
       validationSchema: configValidationSchema,
       envFilePath: '.env',
     }),
-
+    ThrottlerModule.forRoot([
+      {
+        name: 'global',
+        ttl: 6000,
+        limit: 100,
+      },
+    ]),
     // Cache with Redis
     CacheModule.registerAsync({
       isGlobal: true,
@@ -83,11 +94,15 @@ console.log(__dirname);
     StorageModule,
     NotesModule,
     AttachmentsModule,
+    RedisModule,
+    HealthModule,
+    LoggerModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}

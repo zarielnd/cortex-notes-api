@@ -1,16 +1,18 @@
 import { Module } from '@nestjs/common';
-import { SelectionsService } from './selections.service';
-import { SelectionsController } from './selections.controller';
-import { MailModule } from '../mail/mail.module';
-import { User } from 'src/entities/user.entity';
-import { SelectionMember } from 'src/entities/selection-member.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { SelectionMember } from 'src/entities/selection-member.entity';
 import { Selection } from 'src/entities/selection.entity';
+import { User } from 'src/entities/user.entity';
+import { CaslModule } from 'src/infrastructure/casl/casl.module';
+import { MailModule } from '../mail/mail.module';
+import { SelectionsController } from './selections.controller';
+import { SelectionsService } from './selections.service';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Selection, SelectionMember, User]),
     MailModule,
+    CaslModule,
   ],
   controllers: [SelectionsController],
   providers: [SelectionsService],

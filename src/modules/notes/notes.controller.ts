@@ -23,6 +23,7 @@ import { User } from 'src/entities/user.entity';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AttachmentsService } from '../attachments/attachments.service';
+import { ConfirmUploadDto } from '../attachments/dto/confirm-upload.dto';
 import { PresignUploadRequestDto } from '../attachments/dto/presign-upload-request.dto';
 import {
   PresignedDownloadUrl,
@@ -138,7 +139,14 @@ export class NotesController {
   ): Promise<Attachment[]> {
     return this.attachmentsService.uploadToNote(id, files, user);
   }
-
+  @Post(':id/attachments/confirm')
+  confirmUpload(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ConfirmUploadDto,
+    @CurrentUser() user: User,
+  ): Promise<Attachment> {
+    return this.attachmentsService.confirmUpload(id, dto, user);
+  }
   @Get(':id/attachments')
   getAttachments(
     @Param('id', ParseUUIDPipe) id: string,

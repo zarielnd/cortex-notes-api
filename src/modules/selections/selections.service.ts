@@ -17,7 +17,10 @@ import { DataSource, Repository } from 'typeorm';
 import { MailService } from '../mail/mail.service';
 
 import { Selection } from 'src/entities/selection.entity';
-import { RedisKeys } from 'src/infrastructure/redis/redis-key.constant';
+import {
+  RedisKeys,
+  RedisTtl,
+} from 'src/infrastructure/redis/redis-key.constant';
 import {
   AddMemberDto,
   CreateSelectionDto,
@@ -286,7 +289,7 @@ export class SelectionsService {
     const saved = await this.memberRepository.save(member);
 
     // Invalidate both selection cache and this user's ability cache
-    this.invalidateSelectionCache(selectionId);
+    await this.invalidateSelectionCache(selectionId);
     await this.caslAbilityFactory.invalidateAbilityCache(
       targetUserId,
       selectionId,
@@ -303,7 +306,7 @@ export class SelectionsService {
 
   async removeMember(
     selectionId: string,
-    memberId: string,
+    targetUserId: string,
     requester: User,
   ): Promise<{ message: string }> {
     const selection = await this.selectionRepository.findOne({
@@ -313,17 +316,18 @@ export class SelectionsService {
     if (!selection) throw new NotFoundException('Selection not found');
 
     const member = await this.memberRepository.findOne({
-      where: { id: memberId, selectionId },
+      where: { userId: targetUserId, selectionId },
     });
 
     if (!member) throw new NotFoundException('Member not found');
 
-    const ctx = await this.getMemberContext(selectionId, requester);
-
     // Allow self-removal OR owner/admin managing others
     const isSelf = member.userId === requester.id;
-
-    if (!isSelf && !canManageSelection(ctx)) {
+    const ability = await this.caslAbilityFactory.createForUserInSelection(
+      requester,
+      selectionId,
+    );
+    if (!isSelf && !ability.can(Action.Manage, Selection)) {
       throw new ForbiddenException('Only owners can remove other members');
     }
 
@@ -340,6 +344,11 @@ export class SelectionsService {
     }
 
     await this.memberRepository.remove(member);
+    await this.invalidateSelectionCache(selectionId);
+    await this.caslAbilityFactory.invalidateAbilityCache(
+      targetUserId,
+      selectionId,
+    );
 
     return { message: 'Member removed from selection' };
   }
@@ -353,11 +362,22 @@ export class SelectionsService {
     if (!canViewSelection(ctx)) {
       throw new ForbiddenException('No access to this selection');
     }
+    const cacheKey = RedisKeys.selectionMembers(selectionId);
+    const cached = await this.redisService.get(cacheKey);
+    if (cached) return JSON.parse(cached) as SelectionMember[];
 
-    return this.memberRepository.find({
+    const members = await this.memberRepository.find({
       where: { selectionId },
       relations: ['user'],
       order: { createdAt: 'ASC' },
     });
+
+    await this.redisService.set(
+      cacheKey,
+      JSON.stringify(members),
+      RedisTtl.SELECTION,
+    );
+
+    return members;
   }
 }

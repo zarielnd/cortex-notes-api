@@ -34,4 +34,7 @@ export const configValidationSchema = Joi.object({
   AWS_ACCESS_KEY_ID: Joi.string().required(),
   AWS_SECRET_ACCESS_KEY: Joi.string().required(),
   AWS_S3_BUCKET: Joi.string().required(),
+
+  COOKIE_SECRET: Joi.string().required(),
+  ALLOWED_ORIGINS: Joi.string().allow('').default(''),
 });

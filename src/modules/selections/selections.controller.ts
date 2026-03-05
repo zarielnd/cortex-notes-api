@@ -9,7 +9,6 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
-  Put,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth } from '@nestjs/swagger';
@@ -51,7 +50,7 @@ export class SelectionsController {
     return this.selectionsService.create(dto, user);
   }
 
-  @Put(':id')
+  @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateSelectionDto,
@@ -88,21 +87,21 @@ export class SelectionsController {
     return this.selectionsService.addMember(id, dto, user);
   }
 
-  @Patch(':id/members/:memberId/role')
+  @Patch(':id/members/:userId/role')
   updateMemberRole(
     @Param('id', ParseUUIDPipe) id: string,
-    @Param('memberId', ParseUUIDPipe) memberId: string,
+    @Param('userId', ParseUUIDPipe) memberId: string,
     @Body() dto: UpdateMemberRoleDto,
     @CurrentUser() user: User,
   ): Promise<SelectionMember> {
     return this.selectionsService.updateMemberRole(id, memberId, dto, user);
   }
 
-  @Delete(':id/members/:memberId')
+  @Delete(':id/members/:userId')
   @HttpCode(HttpStatus.OK)
   removeMember(
     @Param('id', ParseUUIDPipe) id: string,
-    @Param('memberId', ParseUUIDPipe) memberId: string,
+    @Param('userId', ParseUUIDPipe) memberId: string,
     @CurrentUser() user: User,
   ): Promise<{ message: string }> {
     return this.selectionsService.removeMember(id, memberId, user);

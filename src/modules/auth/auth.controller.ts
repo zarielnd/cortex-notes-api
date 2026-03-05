@@ -1,32 +1,32 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
+  Controller,
   Delete,
-  UseGuards,
+  Get,
   HttpCode,
   HttpStatus,
-  Res,
+  Post,
   Req,
+  Res,
+  UseGuards,
 } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { CurrentUser } from 'src/common/decorators/current-user.decorator';
-import { User } from 'src/entities/user.entity';
-import { DeleteAccountDto } from './dto/delete-account.dto';
-import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ForgotPasswordDto } from './dto/forgot-password.dto';
-import { Public } from 'src/common/decorators/public.decorator';
-import { JwtPayload } from './strategies/jwt.strategy';
-import { AuthTokens } from './interfaces/auth-tokens.interface';
-import { Request, Response } from 'express';
+import { JwtService } from '@nestjs/jwt';
 import { ApiBearerAuth } from '@nestjs/swagger';
-
+import { Throttle } from '@nestjs/throttler';
+import { Request, Response } from 'express';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
+import { Public } from 'src/common/decorators/public.decorator';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { User } from 'src/entities/user.entity';
+import { AuthService } from './auth.service';
+import { DeleteAccountDto } from './dto/delete-account.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { AuthTokens } from './interfaces/auth-tokens.interface';
+@Throttle({ default: { ttl: 60000, limit: 5 } })
 @ApiBearerAuth()
 @Controller('auth')
 @UseGuards(JwtAuthGuard)
@@ -108,7 +108,7 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ message: string }> {
-    const refreshToken = req.cookies?.['refresh_token'];
+    const refreshToken = req.cookies?.['refresh_token'] as string;
 
     if (refreshToken) {
       await this.authService.logout(refreshToken);

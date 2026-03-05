@@ -37,6 +37,7 @@ export interface PresignedUploadUrl {
 export class StorageService {
   private readonly s3Client: S3Client;
   private readonly bucket: string;
+  private readonly region: string;
   private readonly logger = new Logger(StorageService.name);
 
   constructor(private readonly configService: ConfigService) {
@@ -49,6 +50,12 @@ export class StorageService {
       },
     });
     this.bucket = this.configService.get<string>('aws.s3Bucket') ?? '';
+    this.region =
+      this.configService.get<string>('aws.region') ?? 'ap-southeast-1';
+  }
+
+  buildPublicUrl(s3Key: string): string {
+    return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${s3Key}`;
   }
 
   async uploadFile(
