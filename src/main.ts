@@ -42,10 +42,10 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1');
 
   const config = new DocumentBuilder()
-    .setTitle('Notion Demo API')
-    .setDescription('API documentation for Notion Demo')
+    .setTitle('CortexNotes API')
+    .setDescription('Backend API for CortexNotes knowledge platform')
     .setVersion('1.0')
-    .addBearerAuth() // 👈 for JWT auth
+    .addBearerAuth() // for JWT auth
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
