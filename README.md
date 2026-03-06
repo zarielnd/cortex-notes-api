@@ -348,6 +348,8 @@ AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_S3_BUCKET=
 
+COOKIE_SECRET=
+ALLOWED_ORIGINS=
 ```
 
 All validated at startup using Joi schema.
