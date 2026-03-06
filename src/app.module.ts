@@ -17,7 +17,6 @@ import mailConfig from './config/mail.config';
 import redisConfig from './config/redis.config';
 import { CaslModule } from './infrastructure/casl/casl.module';
 import { DatabaseModule } from './infrastructure/database/database.module';
-import { HealthController } from './infrastructure/health/health.controller';
 import { HealthModule } from './infrastructure/health/health.module';
 import { LoggerModule } from './infrastructure/logger/logger.module';
 import { RedisModule } from './infrastructure/redis/redis.module';
@@ -103,6 +102,5 @@ console.log(__dirname);
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_INTERCEPTOR, useClass: TransformInterceptor },
   ],
-  controllers: [HealthController],
 })
 export class AppModule {}
