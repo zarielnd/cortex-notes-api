@@ -1,4 +1,4 @@
-# 🧠 Collaborative Workspace Backend API
+# 🧠 CortexNotes - Collaborative Workspace Backend API
 
 A production-oriented, modular monolith backend system inspired by Notion.
 
