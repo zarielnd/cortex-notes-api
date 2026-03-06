@@ -1,18 +1,18 @@
 import {
+  BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
-  ConflictException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, FindOptionsWhere } from 'typeorm';
 import * as crypto from 'crypto';
-import { User, UserStatus } from '../../entities/user.entity';
+import { DataSource, FindOptionsWhere, Repository } from 'typeorm';
 import { Role } from '../../entities/role.entity';
+import { User, UserStatus } from '../../entities/user.entity';
+import { AuthService } from '../auth/auth.service';
+import { MailService } from '../mail/mail.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { MailService } from '../mail/mail.service';
-import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class UsersService {
@@ -100,11 +100,11 @@ export class UsersService {
 
   async disable(id: string): Promise<User> {
     const user = await this.findById(id);
-    if (user.status === UserStatus.INACTIVE) {
+    if (user.status === UserStatus.DISABLED) {
       throw new BadRequestException('User is already disabled');
     }
 
-    user.status = UserStatus.INACTIVE;
+    user.status = UserStatus.DISABLED;
     await this.tokenService.revokeAllForUser(id);
     return this.userRepository.save(user);
   }
